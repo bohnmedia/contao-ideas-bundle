@@ -19,6 +19,8 @@ readonly class IniIdeaMemberOptionsListener
     }
 
     /**
+     * @return array<int, string>
+     *
      * @throws Exception
      */
     public function __invoke(): array

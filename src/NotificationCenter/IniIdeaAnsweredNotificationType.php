@@ -35,6 +35,7 @@ readonly class IniIdeaAnsweredNotificationType implements NotificationTypeInterf
             $this->factory->create(EmailTokenDefinition::class, 'recipient_email', 'ini_idea.recipient_email'),
             $this->factory->create(TextTokenDefinition::class, 'member_firstname', 'ini_idea.member_firstname'),
             $this->factory->create(TextTokenDefinition::class, 'member_lastname', 'ini_idea.member_lastname'),
+            $this->factory->create(TextTokenDefinition::class, 'author_name', 'ini_idea.author_name'),
             $this->factory->create(TextTokenDefinition::class, 'idea_title', 'ini_idea.idea_title'),
             $this->factory->create(TextTokenDefinition::class, 'idea_description', 'ini_idea.idea_description'),
             $this->factory->create(HtmlTokenDefinition::class, 'idea_answer', 'ini_idea.idea_answer'),

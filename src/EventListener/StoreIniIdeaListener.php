@@ -7,11 +7,19 @@ namespace BohnMedia\ContaoIdeasBundle\EventListener;
 use Contao\CoreBundle\DependencyInjection\Attribute\AsHook;
 use Contao\FrontendUser;
 use Contao\Form;
+use Contao\Widget;
 use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * Ergänzt die über "Eingaben speichern" in tl_ini_idea geschriebenen
  * Formulardaten um die Felder, die nicht aus dem Formular selbst kommen.
+ *
+ * Funktioniert mit und ohne Login: Gäste tragen Name und E-Mail-Adresse in
+ * den Feldern authorName und authorEmail ein. Bei eingeloggten Mitgliedern
+ * werden beide aus tl_member übernommen und zusätzlich memberId gesetzt.
+ *
+ * Angezeigt werden bevorzugt die aktuellen Daten aus tl_member, die Kopie in
+ * tl_ini_idea greift erst, wenn das Mitglied gelöscht wurde.
  */
 readonly class StoreIniIdeaListener
 {
@@ -21,10 +29,41 @@ readonly class StoreIniIdeaListener
      * Felder, die aus dem Formular übernommen werden dürfen. Alle übrigen
      * Formularfelder (z. B. Captcha) würden sonst zu einem SQL-Fehler führen.
      */
-    private const ALLOWED_FIELDS = ['title', 'description'];
+    private const ALLOWED_FIELDS = ['title', 'description', 'authorName', 'authorEmail'];
 
-    public function __construct(private  Security $security)
+    /**
+     * Felder, die bei eingeloggten Mitgliedern aus tl_member kommen.
+     */
+    private const AUTHOR_FIELDS = ['authorName', 'authorEmail'];
+
+    public function __construct(private Security $security)
     {
+    }
+
+    /**
+     * Belegt Name und E-Mail-Adresse für eingeloggte Mitglieder vor und sperrt
+     * die Felder. Schreibgeschützte Felder übermittelt Contao nicht, gespeichert
+     * werden die Werte in storeFormData direkt aus tl_member.
+     *
+     * @param array<string, mixed> $formData
+     */
+    #[AsHook('loadFormField')]
+    public function onLoadFormField(Widget $widget, string $formId, array $formData, Form $form): Widget
+    {
+        if (self::TARGET_TABLE !== $form->targetTable || !\in_array($widget->name, self::AUTHOR_FIELDS, true)) {
+            return $widget;
+        }
+
+        $user = $this->security->getUser();
+
+        if ($user instanceof FrontendUser) {
+            $widget->value = 'authorEmail' === $widget->name
+                ? (string) $user->email
+                : $this->getMemberName($user);
+            $widget->readonly = true;
+        }
+
+        return $widget;
     }
 
     /**
@@ -34,6 +73,10 @@ readonly class StoreIniIdeaListener
      *
      * Im Notification Center stehen die Werte damit als ##form_member_firstname##,
      * ##form_member_lastname## und ##form_member_email## zur Verfügung.
+     *
+     * @param array<string, mixed> $submittedData
+     * @param array<string, mixed> $labels
+     * @param array<int, mixed>    $fields
      */
     #[AsHook('prepareFormData')]
     public function onPrepareFormData(array &$submittedData, array $labels, array $fields, Form $form): void
@@ -51,8 +94,18 @@ readonly class StoreIniIdeaListener
         $submittedData['member_firstname'] = (string) $user->firstname;
         $submittedData['member_lastname'] = (string) $user->lastname;
         $submittedData['member_email'] = (string) $user->email;
+
+        // Die gesperrten Felder übermittelt Contao nicht. Gefüllt reicht eine
+        // Notification mit ##form_authorName## für Mitglieder und Gäste.
+        $submittedData['authorName'] = $this->getMemberName($user);
+        $submittedData['authorEmail'] = (string) $user->email;
     }
 
+    /**
+     * @param array<string, mixed> $set
+     *
+     * @return array<string, mixed>
+     */
     #[AsHook('storeFormData')]
     public function __invoke(array $set, Form $form): array
     {
@@ -66,16 +119,24 @@ readonly class StoreIniIdeaListener
 
         $set['tstamp'] = $time;
         $set['createdAt'] = $time;
-        $set['memberId'] = $this->getMemberId();
+        $set['memberId'] = 0;
         $set['invisible'] = '1';
+
+        $user = $this->security->getUser();
+
+        // Bei Mitgliedern kommen Name und E-Mail-Adresse immer aus tl_member,
+        // ein mitgeschickter Wert darf niemanden als jemand anderen ausgeben
+        if ($user instanceof FrontendUser) {
+            $set['memberId'] = (int) $user->id;
+            $set['authorName'] = $this->getMemberName($user);
+            $set['authorEmail'] = (string) $user->email;
+        }
 
         return $set;
     }
 
-    private function getMemberId(): int
+    private function getMemberName(FrontendUser $user): string
     {
-        $user = $this->security->getUser();
-
-        return $user instanceof FrontendUser ? (int) $user->id : 0;
+        return trim($user->firstname.' '.$user->lastname) ?: (string) $user->username;
     }
 }

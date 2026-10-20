@@ -3,6 +3,7 @@
 /*
  * Felder des Inhaltselements "Ideenliste"
  */
+$GLOBALS['TL_LANG']['tl_content']['iniIdeaShowAuthor'] = array('Autor anzeigen', 'Den Namen des Einreichers in der Liste anzeigen.');
 $GLOBALS['TL_LANG']['tl_content']['iniIdeaAllowWithdraw'] = array('Zurücknehmen erlauben', 'Mitglieder können eigene Ideen zurücknehmen, solange diese noch nicht beantwortet wurden.');
 
 /*

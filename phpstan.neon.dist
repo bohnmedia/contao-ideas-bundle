@@ -1,0 +1,7 @@
+parameters:
+    level: 6
+    paths:
+        - src
+    ignoreErrors:
+        # Felder aus contao/dca/tl_content.php, Contao-Models sind dynamisch
+        - '#Access to an undefined property Contao\\ContentModel::\$iniIdea#'

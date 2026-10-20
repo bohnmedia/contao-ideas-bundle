@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BohnMedia\ContaoIdeasBundle\Controller\ContentElement;
 
 use Contao\Config;
+use Contao\CoreBundle\Cache\EntityCacheTags;
 use Contao\ContentModel;
 use Contao\CoreBundle\Controller\ContentElement\AbstractContentElementController;
 use Contao\CoreBundle\Csrf\ContaoCsrfTokenManager;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Listet die Ideen aus tl_ini_idea im Frontend auf.
@@ -34,12 +36,17 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 #[AsContentElement('ini_idea_list', category: 'includes')]
 class IniIdeaListController extends AbstractContentElementController
 {
+    private const CACHE_TAG = 'contao.db.tl_ini_idea';
+
     public function __construct(
         private readonly Connection $connection,
         private readonly Security $security,
         private readonly ContaoCsrfTokenManager $csrfTokenManager,
         #[Autowire('%contao.csrf_token_name%')]
         private readonly string $csrfTokenName,
+        #[Autowire(service: 'contao.cache.entity_tags')]
+        private readonly EntityCacheTags $entityCacheTags,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -87,8 +94,10 @@ class IniIdeaListController extends AbstractContentElementController
 
         $ideas = $this->fetchIdeas($where, $params, $offset, $limit, $memberId, $model);
 
-        // Backend-Änderungen an den gezeigten Ideen verwerfen den Cache-Eintrag
-        $this->tagResponse(array_map(static fn (array $idea): string => 'contao.db.tl_ini_idea.'.$idea['id'], $ideas));
+        // Das Backend invalidiert bei jeder Änderung den Tabellen-Tag. Nur so
+        // verwirft auch eine neu freigegebene Idee, die noch in keiner
+        // gecachten Liste steht, den Cache-Eintrag.
+        $this->tagResponse(self::CACHE_TAG);
 
         $template->set('ideas', $ideas);
         $template->set('pagination', $pagination);
@@ -97,6 +106,7 @@ class IniIdeaListController extends AbstractContentElementController
         $template->set('element_id', (int) $model->id);
         $template->set('request_token', $this->csrfTokenManager->getDefaultTokenValue());
         $template->set('withdrawn', $this->consumeWithdrawnFlash($request, $model));
+        $template->set('show_author', (bool) $model->iniIdeaShowAuthor);
 
         return $template->getResponse();
     }
@@ -134,6 +144,7 @@ class IniIdeaListController extends AbstractContentElementController
                 'i.description',
                 'i.answer',
                 'i.invisible',
+                'i.authorName AS guestName',
                 "TRIM(CONCAT(m.firstname, ' ', m.lastname)) AS authorName",
                 'm.username AS authorUsername',
             )
@@ -161,7 +172,7 @@ class IniIdeaListController extends AbstractContentElementController
 
         foreach ($qb->executeQuery()->fetchAllAssociative() as $row) {
             $isOwn = $memberId && (int) $row['memberId'] === $memberId;
-            $author = trim((string) $row['authorName']) ?: (string) $row['authorUsername'];
+            $author = $this->getAuthor($row);
             $invisible = (bool) $row['invisible'];
             $answer = trim((string) $row['answer']);
             $status = match (true) {
@@ -210,13 +221,19 @@ class IniIdeaListController extends AbstractContentElementController
 
         // Die WHERE-Bedingung erzwingt Eigentümerschaft und fehlende Antwort,
         // unabhängig davon, was der Client sendet.
-        $this->connection->executeStatement(
+        $deleted = $this->connection->executeStatement(
             "DELETE FROM tl_ini_idea WHERE id = :id AND memberId = :member AND (answer IS NULL OR answer = '')",
             [
                 'id' => (int) $request->request->get('ini_idea_id'),
                 'member' => $memberId,
             ],
         );
+
+        // Am Backend vorbei gelöscht, daher selbst invalidieren, sonst bleibt
+        // eine freigegebene Idee in gecachten Listen stehen
+        if ($deleted > 0) {
+            $this->entityCacheTags->invalidateTagsFor(self::CACHE_TAG);
+        }
 
         // Der Hinweis überlebt genau eine Anfrage und taucht daher weder beim
         // Neuladen noch bei einem geteilten Link wieder auf.
@@ -263,6 +280,25 @@ class IniIdeaListController extends AbstractContentElementController
     private function getFlashType(ContentModel $model): string
     {
         return 'ini_idea_withdrawn_'.$model->id;
+    }
+
+    /**
+     * Mitgliedsname, sonst der im Formular eingetragene Name (Einreichung
+     * ohne Login), sonst ein Platzhalter.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function getAuthor(array $row): string
+    {
+        $author = trim((string) $row['authorName']) ?: trim((string) $row['authorUsername']) ?: trim((string) $row['guestName']);
+
+        if ('' !== $author) {
+            return $author;
+        }
+
+        $key = (int) $row['memberId'] > 0 ? 'formerMember' : 'anonymous';
+
+        return $this->translator->trans('MSC.iniIdea.'.$key, [], 'contao_default');
     }
 
     private function getMemberId(): int|null

@@ -16,6 +16,9 @@ use Terminal42\NotificationCenterBundle\NotificationCenter;
 /**
  * Benachrichtigt den Fragensteller, sobald seine Idee beantwortet wurde.
  *
+ * Bei Mitgliedern kommen Name und E-Mail-Adresse aus tl_member, bei
+ * Einreichungen ohne Login aus authorName und authorEmail.
+ *
  * Versendet werden alle Benachrichtigungen vom Typ "Idee beantwortet" —
  * es muss also nur eine Notification dieses Typs gepflegt werden, eine
  * Zuordnung im Datensatz ist nicht nötig. answerNotifiedAt stellt sicher,
@@ -41,11 +44,13 @@ readonly class IniIdeaAnswerNotificationListener
         }
 
         $row = $this->connection->fetchAssociative(
-            'SELECT i.id, i.title, i.description, i.answer, i.createdAt, i.answerNotifiedAt,
-                    m.firstname, m.lastname, m.email
+            "SELECT i.id, i.title, i.description, i.answer, i.createdAt, i.answerNotifiedAt,
+                    m.firstname, m.lastname,
+                    COALESCE(NULLIF(TRIM(CONCAT_WS(' ', m.firstname, m.lastname)), ''), i.authorName) AS authorName,
+                    COALESCE(NULLIF(m.email, ''), i.authorEmail) AS email
              FROM tl_ini_idea i
              LEFT JOIN tl_member m ON m.id = i.memberId
-             WHERE i.id = ?',
+             WHERE i.id = ?",
             [$dc->id],
         );
 
@@ -72,6 +77,7 @@ readonly class IniIdeaAnswerNotificationListener
             'recipient_email' => (string) $row['email'],
             'member_firstname' => (string) $row['firstname'],
             'member_lastname' => (string) $row['lastname'],
+            'author_name' => (string) $row['authorName'],
             'idea_title' => (string) $row['title'],
             'idea_description' => (string) $row['description'],
             'idea_answer' => (string) $row['answer'],

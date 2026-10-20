@@ -10,12 +10,16 @@
     {% else %}
         <ul class="ini-idea-list">
             {% for idea in ideas %}
-                <li class="ini-idea{{ idea.is_own ? ' ini-idea--own' }}{{ idea.invisible ? ' ini-idea--unanswered' : ' ini-idea--answered' }}">
+                <li class="ini-idea ini-idea--{{ idea.status }}{{ idea.is_own ? ' ini-idea--own' }}">
                     {% block idea %}
                         <div class="ini-idea__question">
                             <div class="ini-idea__meta">
                                 <p class="ini-idea__meta-text">
-                                    {{ 'MSC.iniIdea.submitted_info'|trans([idea.author, idea.date], 'contao_default') }}
+                                    {% if show_author %}
+                                        {{ 'MSC.iniIdea.submitted_info'|trans([idea.author, idea.date], 'contao_default') }}
+                                    {% else %}
+                                        {{ 'MSC.iniIdea.submitted_on'|trans([idea.date], 'contao_default') }}
+                                    {% endif %}
                                 </p>
                                 <span class="ini-idea__meta-status">
                                     {{ ('MSC.iniIdea.' ~ idea.status)|trans({}, 'contao_default') }}
@@ -26,15 +30,16 @@
 
                             {% if idea.description is not empty %}
                                 <div class="ini-idea__description">{{ idea.description|nl2br }}</div>
-                                {% if idea.can_withdraw %}
-                                    <form class="ini-idea__withdraw" method="post">
-                                        <input type="hidden" name="REQUEST_TOKEN" value="{{ request_token }}">
-                                        <input type="hidden" name="ini_idea_action" value="withdraw">
-                                        <input type="hidden" name="ini_idea_element" value="{{ element_id }}">
-                                        <input type="hidden" name="ini_idea_id" value="{{ idea.id }}">
-                                        <button type="submit" class="ini-idea__withdraw-submit">{{ 'MSC.iniIdea.withdraw'|trans({}, 'contao_default') }}</button>
-                                    </form>
-                                {% endif %}
+                            {% endif %}
+
+                            {% if idea.can_withdraw %}
+                                <form class="ini-idea__withdraw" method="post">
+                                    <input type="hidden" name="REQUEST_TOKEN" value="{{ request_token }}">
+                                    <input type="hidden" name="ini_idea_action" value="withdraw">
+                                    <input type="hidden" name="ini_idea_element" value="{{ element_id }}">
+                                    <input type="hidden" name="ini_idea_id" value="{{ idea.id }}">
+                                    <button type="submit" class="ini-idea__withdraw-submit">{{ 'MSC.iniIdea.withdraw'|trans({}, 'contao_default') }}</button>
+                                </form>
                             {% endif %}
                         </div>
 

@@ -54,7 +54,7 @@ $GLOBALS['TL_DCA']['tl_ini_idea'] = array
 	// Palettes
 	'palettes' => array
 	(
-		'default'                     => '{idea_legend},memberId,createdAt,title,description;{answer_legend},answer,answerNotifiedAt;{invisible_legend},invisible'
+		'default'                     => '{idea_legend},memberId,authorName,authorEmail,createdAt,title,description;{answer_legend},answer,answerNotifiedAt;{invisible_legend},invisible'
 	),
 
 	// Fields
@@ -78,13 +78,27 @@ $GLOBALS['TL_DCA']['tl_ini_idea'] = array
             'sql'                     => "int(10) unsigned NOT NULL default 0",
             'relation'                => array('type'=>'belongsTo', 'load'=>'lazy')
         ),
+		'authorName' => array
+		(
+			'search'                  => true,
+			'inputType'               => 'text',
+			'eval'                    => array('maxlength'=>255, 'tl_class'=>'w50'),
+			'sql'                     => "varchar(255) NOT NULL default ''"
+		),
+		'authorEmail' => array
+		(
+			'search'                  => true,
+			'inputType'               => 'text',
+			'eval'                    => array('rgxp'=>'email', 'maxlength'=>255, 'decodeEntities'=>true, 'tl_class'=>'w50'),
+			'sql'                     => "varchar(255) NOT NULL default ''"
+		),
 		'createdAt' => array
 		(
 			'default'                 => time(),
 			'sorting'                 => true,
 			'flag'                    => DataContainer::SORT_DAY_DESC,
 			'inputType'               => 'text',
-			'eval'                    => array('rgxp'=>'datim', 'datepicker'=>true, 'doNotCopy'=>true, 'tl_class'=>'w50 wizard'),
+			'eval'                    => array('rgxp'=>'datim', 'datepicker'=>true, 'doNotCopy'=>true, 'tl_class'=>'w50 wizard clr'),
 			'sql'                     => "int(10) unsigned NOT NULL default 0"
 		),
 		'title' => array
