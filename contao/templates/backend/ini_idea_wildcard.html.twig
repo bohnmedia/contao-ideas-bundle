@@ -1,0 +1,11 @@
+{% trans_default_domain 'contao_default' %}
+
+{% if title %}
+    <h1>{{ title }}</h1>
+{% endif %}
+
+<div class="tl_gray">
+    <span class="upper">### {{ ('CTE.' ~ type ~ '.0')|trans }} ###</span>
+    <br>
+    <a href="{{ path('contao_backend', {do: 'ini_ideas'}) }}" class="tl_gray">{{ 'MOD.ini_ideas.0'|trans({}, 'contao_modules') }}</a>
+</div>

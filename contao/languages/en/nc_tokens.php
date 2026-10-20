@@ -12,3 +12,6 @@ $GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['idea_description'] = 'Description 
 $GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['idea_answer'] = 'Answer (HTML)';
 $GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['idea_created_at'] = 'Submission date';
 $GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['idea_id'] = 'ID of the idea';
+$GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['author_email'] = 'Email address of the submitter (member or guest)';
+$GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['is_member'] = '1 if a member submitted the idea, otherwise 0';
+$GLOBALS['TL_LANG']['nc_tokens']['ini_idea']['idea_backend_url'] = 'Link to the idea in the back end';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BohnMedia\ContaoIdeasBundle\EventListener;
 
+use BohnMedia\ContaoIdeasBundle\Author\MemberName;
 use Contao\CoreBundle\DependencyInjection\Attribute\AsHook;
 use Contao\FrontendUser;
 use Contao\Form;
@@ -59,7 +60,7 @@ readonly class StoreIniIdeaListener
         if ($user instanceof FrontendUser) {
             $widget->value = 'authorEmail' === $widget->name
                 ? (string) $user->email
-                : $this->getMemberName($user);
+                : MemberName::of($user);
             $widget->readonly = true;
         }
 
@@ -97,7 +98,7 @@ readonly class StoreIniIdeaListener
 
         // Die gesperrten Felder übermittelt Contao nicht. Gefüllt reicht eine
         // Notification mit ##form_authorName## für Mitglieder und Gäste.
-        $submittedData['authorName'] = $this->getMemberName($user);
+        $submittedData['authorName'] = MemberName::of($user);
         $submittedData['authorEmail'] = (string) $user->email;
     }
 
@@ -128,15 +129,11 @@ readonly class StoreIniIdeaListener
         // ein mitgeschickter Wert darf niemanden als jemand anderen ausgeben
         if ($user instanceof FrontendUser) {
             $set['memberId'] = (int) $user->id;
-            $set['authorName'] = $this->getMemberName($user);
+            $set['authorName'] = MemberName::of($user);
             $set['authorEmail'] = (string) $user->email;
         }
 
         return $set;
     }
 
-    private function getMemberName(FrontendUser $user): string
-    {
-        return trim($user->firstname.' '.$user->lastname) ?: (string) $user->username;
-    }
 }

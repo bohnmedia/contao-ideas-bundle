@@ -1,0 +1,21 @@
+{% extends "@Contao/content_element/_base.html.twig" %}
+
+{% block content %}
+    {% if message %}
+        <div class="form-confirmation">
+            {{ message|insert_tag_raw|raw }}
+        </div>
+    {% elseif form %}
+        {{ form|raw }}
+
+        {# Doppeltes Absenden verhindern, wie im Formulargenerator #}
+        <script{% if csp_nonce('script-src') %} nonce="{{ csp_nonce('script-src') }}"{% endif %}>
+            document.currentScript.previousElementSibling?.addEventListener('submit', e => {
+                if (e.submitter) {
+                    setTimeout(() => e.submitter.disabled = true);
+                    setTimeout(() => e.submitter.disabled = false, 30000);
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}

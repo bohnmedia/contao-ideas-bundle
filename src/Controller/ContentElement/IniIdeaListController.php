@@ -33,9 +33,11 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * eigenen Ideen des eingeloggten Mitglieds, damit dieses den Status der eigenen
  * Einreichung verfolgen kann.
  */
-#[AsContentElement('ini_idea_list', category: 'includes')]
+#[AsContentElement('ini_idea_list', category: 'ini_ideas')]
 class IniIdeaListController extends AbstractContentElementController
 {
+    use BackendWildcardTrait;
+
     private const CACHE_TAG = 'contao.db.tl_ini_idea';
 
     public function __construct(
@@ -52,6 +54,10 @@ class IniIdeaListController extends AbstractContentElementController
 
     protected function getResponse(FragmentTemplate $template, ContentModel $model, Request $request): Response
     {
+        if ($this->isBackendScope($request)) {
+            return $this->getBackendWildcard($model);
+        }
+
         $this->initializeContaoFramework();
 
         $memberId = $this->getMemberId();
