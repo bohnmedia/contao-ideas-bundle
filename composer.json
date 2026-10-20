@@ -1,0 +1,39 @@
+{
+    "name": "bohnmedia/contao-ideas-bundle",
+    "description": "Idea management for Contao 5: members submit ideas through a regular form, editors answer them in the back end, and a content element lists them in the front end.",
+    "type": "contao-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dennis Bohn",
+            "email": "dennis.bohn@bohnmedia.de"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "contao/core-bundle": "^5.3",
+        "contao/manager-plugin": "^2.0",
+        "doctrine/dbal": "^3.3 || ^4.0",
+        "symfony/config": "^6.4 || ^7.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0",
+        "symfony/http-foundation": "^6.4 || ^7.0",
+        "symfony/http-kernel": "^6.4 || ^7.0",
+        "symfony/security-bundle": "^6.4 || ^7.0",
+        "terminal42/notification_center": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BohnMedia\\ContaoIdeasBundle\\": "src/"
+        }
+    },
+    "extra": {
+        "contao-manager-plugin": "BohnMedia\\ContaoIdeasBundle\\ContaoManager\\Plugin"
+    },
+    "config": {
+        "allow-plugins": {
+            "contao-components/installer": true,
+            "contao/manager-plugin": true,
+            "php-http/discovery": true
+        }
+    }
+}

@@ -1,0 +1,10 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    BohnMedia\ContaoIdeasBundle\:
+        resource: '../src/'
+        exclude:
+            - '../src/ContaoIdeasBundle.php'
+            - '../src/ContaoManager/'

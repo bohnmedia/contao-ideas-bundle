@@ -1,0 +1,56 @@
+{% extends "@Contao/content_element/_base.html.twig" %}
+
+{% block content %}
+    {% if withdrawn %}
+        <p class="ini-idea-message">{{ 'MSC.iniIdea.withdrawn'|trans({}, 'contao_default') }}</p>
+    {% endif %}
+
+    {% if ideas is empty %}
+        <p class="ini-idea-empty">{{ 'MSC.iniIdea.empty'|trans({}, 'contao_default') }}</p>
+    {% else %}
+        <ul class="ini-idea-list">
+            {% for idea in ideas %}
+                <li class="ini-idea{{ idea.is_own ? ' ini-idea--own' }}{{ idea.invisible ? ' ini-idea--unanswered' : ' ini-idea--answered' }}">
+                    {% block idea %}
+                        <div class="ini-idea__question">
+                            <div class="ini-idea__meta">
+                                <p class="ini-idea__meta-text">
+                                    {{ 'MSC.iniIdea.submitted_info'|trans([idea.author, idea.date], 'contao_default') }}
+                                </p>
+                                <span class="ini-idea__meta-status">
+                                    {{ ('MSC.iniIdea.' ~ idea.status)|trans({}, 'contao_default') }}
+                                </span>
+                            </div>
+
+                            <h3 class="ini-idea__title">{{ idea.title }}</h3>
+
+                            {% if idea.description is not empty %}
+                                <div class="ini-idea__description">{{ idea.description|nl2br }}</div>
+                                {% if idea.can_withdraw %}
+                                    <form class="ini-idea__withdraw" method="post">
+                                        <input type="hidden" name="REQUEST_TOKEN" value="{{ request_token }}">
+                                        <input type="hidden" name="ini_idea_action" value="withdraw">
+                                        <input type="hidden" name="ini_idea_element" value="{{ element_id }}">
+                                        <input type="hidden" name="ini_idea_id" value="{{ idea.id }}">
+                                        <button type="submit" class="ini-idea__withdraw-submit">{{ 'MSC.iniIdea.withdraw'|trans({}, 'contao_default') }}</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        {% if idea.answer %}
+                            <div class="ini-idea__answer">
+                                <h4 class="ini-idea__answer-title">{{ 'MSC.iniIdea.answer'|trans({}, 'contao_default') }}</h4>
+                                {{ idea.answer|insert_tag_raw|raw }}
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if pagination %}
+        {{ pagination|raw }}
+    {% endif %}
+{% endblock %}
